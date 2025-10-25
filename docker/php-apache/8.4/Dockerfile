@@ -1,30 +1,22 @@
 #+++++++++++++++++++++++++++++++++++++++
 # Dockerfile for webdevops/php-apache:8.4
-#    -- automatically generated  --
+#    -- simplified & fixed to listen on :80 --
 #+++++++++++++++++++++++++++++++++++++++
 
-FROM webdevops/php:8.4
+FROM webdevops/php-apache:8.4
 
+# 设置站点根目录与首页（webdevops 默认虚拟主机会读取这些环境变量）
 ENV WEB_DOCUMENT_ROOT=/app \
     WEB_DOCUMENT_INDEX=index.php \
     WEB_ALIAS_DOMAIN=*.vm \
-    WEB_PHP_TIMEOUT=600 \
-    WEB_PHP_SOCKET=""
-ENV WEB_PHP_SOCKET=127.0.0.1:9000
+    WEB_PHP_TIMEOUT=600
 
-COPY conf/ /opt/docker/
+# 确保 DocumentRoot 存在，并放入占位首页，避免 Apache 因目录不存在而启动失败
+RUN set -eux; \
+    mkdir -p /app; \
+    printf "<?php echo 'OK';" > /app/index.php
 
-RUN set -x \
-    # Install apache
-    && apt-install \
-        apache2 \
-    && sed -ri ' \
-        s!^(\s*CustomLog)\s+\S+!\1 /proc/self/fd/1!g; \
-        s!^(\s*ErrorLog)\s+\S+!\1 /proc/self/fd/2!g; \
-        ' /etc/apache2/apache2.conf \
-    && rm -f /etc/apache2/sites-enabled/* \
-    && a2enmod actions proxy proxy_fcgi ssl rewrite headers expires \
-    && docker-run-bootstrap \
-    && docker-image-cleanup
+# 如需自定义 Apache 或 PHP 配置，可将文件放入 /opt/docker/ 对应目录
+# COPY conf/ /opt/docker/
 
-EXPOSE 80 443
+EXPOSE 80
