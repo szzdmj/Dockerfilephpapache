@@ -20,7 +20,7 @@
   "placement": { "mode": "smart" },
 
   "containers": [
-    { "class_name": "MyContainerdPhpa", "image": "./Dockerfile" }
+    { "class_name": "MyContainerdPhpa", "image": "docker/php-apache/8.4/Dockerfile" }
   ],
 
  
