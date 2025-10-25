@@ -21,6 +21,5 @@
 
   "containers": [
     { "class_name": "MyContainerdPhpa", "image": "docker/php-apache/8.4/Dockerfile" }
-  ],
-
- 
+  ]
+}
