@@ -1,13 +1,13 @@
 import { Container, getContainer } from "@cloudflare/containers";
 
-// 为兼容旧迁移（v2）导出占位类，避免构建期缺失导出报错
-export class MyContainerdphpa extends Container {
+// 与 wrangler.jsonc 保持一致的 DO 类名，默认端口固定为 80
+export class MyContainerdPhpa extends Container {
   defaultPort = 80;
   sleepAfter = "3m";
 }
 
 type Env = {
-  MY_CONTAINER: DurableObjectNamespace<MyContainerdphpa>;
+  MY_CONTAINER: DurableObjectNamespace<MyContainerdPhpa>;
   INSTANCE_COUNT?: string; // 默认 1
 };
 
@@ -41,7 +41,7 @@ export default {
     const stub = getContainer(env.MY_CONTAINER, name);
 
     try {
-      await stub.start();
+      await stub.start(); // defaultPort=80
     } catch {}
 
     const resp = await stub.fetch(request);
