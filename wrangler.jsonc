@@ -1,0 +1,26 @@
+{
+  "name": "newcontainer",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-08-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "minify": true,
+  "observability": { "enabled": true },
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "MY_CONTAINER", "class_name": "MyContainerdPhpa" }
+    ]
+  },
+
+  "migrations": [
+    { "tag": "v1", "new_classes": ["MyContainer"] },
+    { "tag": "v2", "deleted_classes": ["MyContainer"], "new_sqlite_classes": ["MyContainerdPhpa"] }
+  ],
+
+  "placement": { "mode": "smart" },
+
+  "containers": [
+    { "class_name": "MyContainerdPhpa", "image": "./Dockerfile" }
+  ],
+
+ 
