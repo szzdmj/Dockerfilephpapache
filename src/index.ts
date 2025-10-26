@@ -1,15 +1,13 @@
 import { Container, getContainer } from "@cloudflare/containers";
 
-// 与 wrangler.jsonc 一致；固定默认端口为 80
 export class MyContainerdPhpa extends Container {
   defaultPort = 80;
-  // 可调更长，避免频繁冷启
   sleepAfter = "5m";
 }
 
 type Env = {
   MY_CONTAINER: DurableObjectNamespace<MyContainerdPhpa>;
-  INSTANCE_COUNT?: string; // 默认 1
+  INSTANCE_COUNT?: string;
 };
 
 function parseCookie(header: string | null): Record<string, string> {
@@ -37,26 +35,30 @@ function chooseStickyName(req: Request, count: number): { name: string; setCooki
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// 启动容器并等待可用（探针访问“/”，避免 race）
-async function ensureContainerReady(stub: ReturnType<typeof getContainer>, timeoutMs = 15000) {
+async function ensureContainerReady(stub: ReturnType<typeof getContainer>, timeoutMs = 120000) {
   const startT = Date.now();
-  // 触发启动（若已在跑会快速返回）
   await stub.start();
-
-  // 轮询探测可用（HEAD 有些镜像不支持，统一用 GET /）
+  let wait = 300;
   let lastErr: unknown;
-  const probe = new Request("http://container/", { method: "GET" });
+
+  // 用 GET / 探针，并显式 Host 头，某些 Apache 配置需要
+  const probe = new Request("http://container/", {
+    method: "GET",
+    headers: { Host: "localhost", Connection: "close" },
+  });
+
   while (Date.now() - startT < timeoutMs) {
     try {
       const r = await stub.fetch(probe);
-      // 任何 2xx/3xx 视为已就绪（常见镜像 GET / 返回 200/403/404 也说明已监听）
-      if (r && (r.ok || (r.status >= 200 && r.status < 500))) return;
+      // 2xx/3xx/4xx 都视为端口已监听（<500 即可）
+      if (r && r.status < 500) return;
+      lastErr = `status ${r.status}`;
     } catch (e) {
       lastErr = e;
     }
-    await sleep(500);
+    await sleep(wait);
+    wait = Math.min(wait * 2, 5000);
   }
-  // 超时也抛出，交给上层处理
   throw new Error(`Container not ready within ${timeoutMs}ms${lastErr ? `, last error: ${String(lastErr)}` : ""}`);
 }
 
@@ -67,18 +69,15 @@ export default {
     const stub = getContainer(env.MY_CONTAINER, name);
 
     try {
-      await ensureContainerReady(stub, 20000);
+      await ensureContainerReady(stub, 180000); // 提高到 3 分钟，覆盖冷拉取
     } catch (e) {
-      // 明确返回 503，便于前端/监控识别；附带错误信息
       return new Response(`Service warming up: ${String(e)}`, {
         status: 503,
         headers: { "Cache-Control": "no-store", "X-Container-State": "starting" },
       });
     }
 
-    // 转发原始请求
     const resp = await stub.fetch(request);
-
     if (setCookie) {
       const h = new Headers(resp.headers);
       h.append("Set-Cookie", setCookie);
