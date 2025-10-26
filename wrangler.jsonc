@@ -1,5 +1,5 @@
 {
-  "name": "newcontainer",
+  "name": "phpapache",
   "main": "src/index.ts",
   "compatibility_date": "2025-08-23",
   "compatibility_flags": ["nodejs_compat"],
