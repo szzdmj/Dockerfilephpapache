@@ -154,6 +154,7 @@ RUN set -eux; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
 COPY docker-php-source /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-php-source
 
 RUN set -eux; \
 	\
