@@ -12,14 +12,9 @@
     ]
   },
 
-  "migrations": [
-    { "tag": "v1", "new_classes": ["MyContainer"] },
-    { "tag": "v2", "deleted_classes": ["MyContainer"], "new_sqlite_classes": ["MyContainerdPhpa"] }
-  ],
-
   "placement": { "mode": "smart" },
 
   "containers": [
-    { "class_name": "MyContainerdPhpa", "image": "docker/php-apache/8.4/Dockerfile" }
+    { "class_name": "MyContainerdPhpa", "image": "./docker/php-apache/8.4/Dockerfile" }
   ]
 }
