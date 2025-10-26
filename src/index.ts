@@ -1,6 +1,6 @@
 import { Container, getContainer } from "@cloudflare/containers";
 
-// 与 wrangler.jsonc 保持一致的 DO 类名，默认端口固定为 80
+// 与 wrangler.jsonc 一致的 DO 类名；默认端口固定为 80
 export class MyContainerdPhpa extends Container {
   defaultPort = 80;
   sleepAfter = "3m";
