@@ -1,22 +1,23 @@
 #+++++++++++++++++++++++++++++++++++++++
-# Dockerfile for webdevops/php-apache:8.4
-#    -- simplified & fixed to listen on :80 --
+# Known-good PHP+Apache image that listens on :80
 #+++++++++++++++++++++++++++++++++++++++
 
 FROM webdevops/php-apache:8.4
 
-# 设置站点根目录与首页（webdevops 默认虚拟主机会读取这些环境变量）
+# DocumentRoot 与首页
 ENV WEB_DOCUMENT_ROOT=/app \
     WEB_DOCUMENT_INDEX=index.php \
     WEB_ALIAS_DOMAIN=*.vm \
     WEB_PHP_TIMEOUT=600
 
-# 确保 DocumentRoot 存在，并放入占位首页，避免 Apache 因目录不存在而启动失败
+# 放一个占位首页 + 健康检查页
 RUN set -eux; \
     mkdir -p /app; \
-    printf "<?php echo 'OK';" > /app/index.php
+    printf "<?php echo 'OK';" > /app/index.php; \
+    printf "<?php echo (isset(\$_GET['api']) && \$_GET['api']==='isats') ? '0' : 'ok';" > /app/v.php
 
-# 如需自定义 Apache 或 PHP 配置，可将文件放入 /opt/docker/ 对应目录
-# COPY conf/ /opt/docker/
+# 如果你要拷贝自己的代码，可以追加 COPY 到 /app（但先用最小版验证监听与健康检查）
+# COPY public/ /app/
+# COPY Static_Creation/ /app/
 
 EXPOSE 80
