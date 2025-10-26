@@ -1,0 +1,50 @@
+#!/bin/sh
+set -e
+
+# Enable one or more PHP extensions by creating INI files in $PHP_INI_DIR/conf.d
+# Usage:
+#   docker-php-ext-enable [--ini-name name.ini] ext [ext ...]
+# Examples:
+#   docker-php-ext-enable sodium
+#   docker-php-ext-enable --ini-name custom.ini redis
+
+iniName=
+if [ "$1" = '--ini-name' ]; then
+	iniName="$2"
+	shift 2
+fi
+
+if [ -z "$PHP_INI_DIR" ]; then
+	# fallback if PHP_INI_DIR isn't set in the environment
+	PHP_INI_DIR=/usr/local/etc/php
+fi
+
+confdir="$PHP_INI_DIR/conf.d"
+mkdir -p "$confdir"
+
+for ext; do
+	[ -n "$ext" ] || continue
+
+	# prefer a provided ini filename, otherwise create a docker-php-ext-<ext>.ini
+	if [ -n "$iniName" ]; then
+		target="$confdir/$iniName"
+	else
+		target="$confdir/docker-php-ext-$ext.ini"
+	fi
+
+	# If the extension looks like a zend extension (starts with "zend-"), enable as zend_extension
+	# Otherwise enable as normal extension.
+	case "$ext" in
+		zend-*|*zend*)
+			# strip "zend-" prefix if present
+			so="${ext#zend-}.so"
+			printf "zend_extension=%s\n" "$so" > "$target"
+			;;
+		*)
+			printf "extension=%s.so\n" "$ext" > "$target"
+			;;
+	esac
+
+	# keep perms sane
+	chmod 644 "$target"
+done
